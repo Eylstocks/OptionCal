@@ -2,19 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Option Calculator</title>
 <style>
 :root{
   --bg:#EDF0EA;--panel:#F8FAF6;--field:#FFFFFF;--ink:#16262B;--ink2:#4B5B5F;--muted:#7C898B;
   --line:#D3D9D0;--line2:#B9C2B7;--accent:#0F5C63;--onaccent:#F4FAF9;
   --win:#1E7A4C;--winbg:#D9EEDF;--loss:#B23A32;--lossbg:#F5DBD7;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme: dark){
-  :root{--bg:#11191C;--panel:#172125;--field:#1C282D;--ink:#E6ECE8;--ink2:#A9B7B5;--muted:#7C8B8C;
+  :root:not([data-theme="light"]){--bg:#11191C;--panel:#172125;--field:#1C282D;--ink:#E6ECE8;--ink2:#A9B7B5;--muted:#7C8B8C;
   --line:#2A373B;--line2:#3B4B50;--accent:#5CC2C9;--onaccent:#0B1A1C;
   --win:#56C48B;--winbg:#163325;--loss:#EE7B72;--lossbg:#3A1E1C;}
 }
+:root[data-theme="dark"]{--bg:#11191C;--panel:#172125;--field:#1C282D;--ink:#E6ECE8;--ink2:#A9B7B5;--muted:#7C8B8C;
+  --line:#2A373B;--line2:#3B4B50;--accent:#5CC2C9;--onaccent:#0B1A1C;
+  --win:#56C48B;--winbg:#163325;--loss:#EE7B72;--lossbg:#3A1E1C;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
 main{max-width:640px;margin:0 auto;padding:32px 20px 60px}
@@ -26,6 +31,7 @@ label{display:block;font-size:12.5px;color:var(--ink2);font-weight:500;margin-bo
 input{width:100%;font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line2);border-radius:6px;background:var(--field);color:var(--ink)}
 .derived{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
 .derived div{font-size:13px}
+.derived p{margin:0}
 .derived .k{color:var(--muted);margin-bottom:2px}
 .derived .v{font-size:16px;font-weight:600}
 .win{color:var(--win)}.loss{color:var(--loss)}
@@ -37,6 +43,7 @@ tr:last-child td{border-bottom:0}
 tr:nth-child(5n){background:var(--field)}
 .up{color:var(--win);font-weight:500}
 .down{color:var(--loss);font-weight:500}
+.val{font-weight:500}
 </style>
 </head>
 <body>
@@ -68,7 +75,7 @@ tr:nth-child(5n){background:var(--field)}
 
   <div class="panel" style="padding:0;overflow-x:auto">
     <table>
-      <thead><tr><th>Percent</th><th>Upside ($/contract)</th><th>Downside ($/contract)</th></tr></thead>
+      <thead><tr><th>Percent</th><th>Value ($/contract)</th><th>Upside ($/contract)</th><th>Downside ($/contract)</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
   </div>
@@ -104,9 +111,10 @@ function render(){
 
   var rows='';
   for(var p=5;p<=100;p+=5){
-    var up=costPerContract*(1+p/100);
-    var down=Math.max(0,costPerContract*(1-p/100));
-    rows+='<tr><td>'+p+'%</td><td class="up">'+money(up)+'</td><td class="down">'+money(down)+'</td></tr>';
+    var value=costPerContract*p/100;
+    var up=costPerContract+value;
+    var down=Math.max(0,costPerContract-value);
+    rows+='<tr><td>'+p+'%</td><td class="val">±'+money(value)+'</td><td class="up">'+money(up)+'</td><td class="down">'+money(down)+'</td></tr>';
   }
   document.getElementById('rows').innerHTML=rows;
 }
