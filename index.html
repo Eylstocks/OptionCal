@@ -94,7 +94,7 @@ function render(){
   document.getElementById('costPerContract').textContent=costPerContract>0?money(costPerContract):'—';
 
   if(entry>0&&sold>0){
-    var diff=sold-entry,pct=diff/entry*100;
+    var diff=(sold-entry)*100,pct=(sold-entry)/entry*100;
     var el=document.getElementById('soldDiff');
     el.textContent=sMoney(diff)+' ('+(pct>0?'+':'')+pct.toFixed(2)+'%)';
     el.className='v '+(diff>0?'win':diff<0?'loss':'');
