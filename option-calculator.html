@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option Calculator</title>
+<style>
+:root{
+  --bg:#EDF0EA;--panel:#F8FAF6;--field:#FFFFFF;--ink:#16262B;--ink2:#4B5B5F;--muted:#7C898B;
+  --line:#D3D9D0;--line2:#B9C2B7;--accent:#0F5C63;--onaccent:#F4FAF9;
+  --win:#1E7A4C;--winbg:#D9EEDF;--loss:#B23A32;--lossbg:#F5DBD7;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#11191C;--panel:#172125;--field:#1C282D;--ink:#E6ECE8;--ink2:#A9B7B5;--muted:#7C8B8C;
+  --line:#2A373B;--line2:#3B4B50;--accent:#5CC2C9;--onaccent:#0B1A1C;
+  --win:#56C48B;--winbg:#163325;--loss:#EE7B72;--lossbg:#3A1E1C;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:640px;margin:0 auto;padding:32px 20px 60px}
+h1{font-size:21px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
+.sub{color:var(--ink2);font-size:13.5px;margin:0 0 24px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+label{display:block;font-size:12.5px;color:var(--ink2);font-weight:500;margin-bottom:5px}
+input{width:100%;font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line2);border-radius:6px;background:var(--field);color:var(--ink)}
+.derived{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.derived div{font-size:13px}
+.derived .k{color:var(--muted);margin-bottom:2px}
+.derived .v{font-size:16px;font-weight:600}
+.win{color:var(--win)}.loss{color:var(--loss)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{font-weight:500;color:var(--ink2);text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12.5px}
+th:first-child,td:first-child{text-align:left}
+td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right}
+tr:last-child td{border-bottom:0}
+tr:nth-child(5n){background:var(--field)}
+.up{color:var(--win);font-weight:500}
+.down{color:var(--loss);font-weight:500}
+</style>
+</head>
+<body>
+<main>
+  <h1>Option Calculator</h1>
+  <p class="sub">Quick reference for per-contract price at each % move from entry.</p>
+
+  <div class="panel">
+    <div class="grid">
+      <div>
+        <label for="entry">Entry price ($/share)</label>
+        <input id="entry" type="number" step="any" inputmode="decimal" value="0.44">
+      </div>
+      <div>
+        <label for="sold">Sold price ($/share)</label>
+        <input id="sold" type="number" step="any" inputmode="decimal" value="1.51">
+      </div>
+      <div>
+        <label for="invest">Invest ($)</label>
+        <input id="invest" type="number" step="any" inputmode="decimal" value="1000">
+      </div>
+    </div>
+    <div class="derived">
+      <div><p class="k">Cost per contract</p><p class="v" id="costPerContract">—</p></div>
+      <div><p class="k">Sold diff</p><p class="v" id="soldDiff">—</p></div>
+      <div><p class="k">Contracts</p><p class="v" id="contracts">—</p></div>
+    </div>
+  </div>
+
+  <div class="panel" style="padding:0;overflow-x:auto">
+    <table>
+      <thead><tr><th>Percent</th><th>Upside ($/contract)</th><th>Downside ($/contract)</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+function money(n){if(n==null||isNaN(n))return'—';return(n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function sMoney(n){if(n==null||isNaN(n))return'—';return(n>0?'+':'')+money(n)}
+
+function render(){
+  var entry=parseFloat(document.getElementById('entry').value)||0;
+  var sold=parseFloat(document.getElementById('sold').value)||0;
+  var invest=parseFloat(document.getElementById('invest').value)||0;
+
+  var costPerContract=entry*100;
+  document.getElementById('costPerContract').textContent=costPerContract>0?money(costPerContract):'—';
+
+  if(entry>0&&sold>0){
+    var diff=sold-entry,pct=diff/entry*100;
+    var el=document.getElementById('soldDiff');
+    el.textContent=sMoney(diff)+' ('+(pct>0?'+':'')+pct.toFixed(2)+'%)';
+    el.className='v '+(diff>0?'win':diff<0?'loss':'');
+  } else {
+    document.getElementById('soldDiff').textContent='—';
+    document.getElementById('soldDiff').className='v';
+  }
+
+  var contracts=costPerContract>0?Math.floor(invest/costPerContract):0;
+  var deployed=contracts*costPerContract;
+  document.getElementById('contracts').textContent=costPerContract>0
+    ? contracts+' (≈ '+money(deployed)+' deployed)'
+    : '—';
+
+  var rows='';
+  for(var p=5;p<=100;p+=5){
+    var up=costPerContract*(1+p/100);
+    var down=Math.max(0,costPerContract*(1-p/100));
+    rows+='<tr><td>'+p+'%</td><td class="up">'+money(up)+'</td><td class="down">'+money(down)+'</td></tr>';
+  }
+  document.getElementById('rows').innerHTML=rows;
+}
+
+['entry','sold','invest'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',render);
+});
+render();
+</script>
+</body>
+</html>
